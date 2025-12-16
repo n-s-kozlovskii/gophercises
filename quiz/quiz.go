@@ -27,7 +27,7 @@ func main() {
 	scanner := bufio.NewReader(os.Stdin)
 	file, err := os.Open(*filePathFlag)
 	if err != nil {
-		log.Fatalf("failed to open file: %s", filePathFlag)
+		log.Fatalf("failed to open file: %s", *filePathFlag)
 	}
 	defer file.Close()
 	r := csv.NewReader(file)
