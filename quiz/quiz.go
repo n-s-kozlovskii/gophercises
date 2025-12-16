@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -23,7 +22,6 @@ func main() {
 	flag.Parse()
 
 	score := 0
-	questions := make([]question, 0, 100)
 	scanner := bufio.NewReader(os.Stdin)
 	file, err := os.Open(*filePathFlag)
 	if err != nil {
@@ -31,22 +29,20 @@ func main() {
 	}
 	defer file.Close()
 	r := csv.NewReader(file)
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		questions = append(questions, question{record[0], record[1]})
+	lines, err := r.ReadAll()
+	questions := make([]question, len(lines))
+	if err != nil {
+		log.Fatalf("failed to load questions from %s", *filePathFlag)
+	}
+	for i, l := range lines {
+		questions[i] = question{question: l[0], answer: strings.TrimSpace(l[1])}
 	}
 
 	timer := time.NewTimer(time.Duration(*limit) * time.Second)
 	go func() {
 		defer os.Exit(0)
 		<-timer.C
-		fmt.Printf("\nPassed %d seconds, you're done;\nscore is %d\n", limit, score)
+		fmt.Printf("\nPassed %d seconds, you're done;\nscore is %d out of %d\n", limit, score, len(questions))
 	}()
 
 	for _, q := range questions {
@@ -55,9 +51,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if strings.TrimSpace(userAnswer) == strings.TrimSpace(q.answer) {
+		if strings.TrimSpace(userAnswer) == q.answer {
 			score = score + 1
 		}
 	}
-	fmt.Printf("your score is %d\n", score)
+	fmt.Printf("your score is %d out %d\n", score, len(questions))
 }
